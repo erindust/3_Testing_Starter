@@ -39,6 +39,51 @@ class BookTestCase(unittest.TestCase):
 #        Such as adding a book without a rating, etc.
 #        Since there are four routes currently, you should have at least eight tests.
 # Optional: Update the book information in setUp to make the test database your own!
+    # def test_404_on_root(self):
+    #     res = self.client().get('/')
+    #     self.assertEqual(res.status.code,404)
+
+    def test_422_on_delete_non_existant_book(self):
+        res = self.client().delete("/books/1000")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code,422)
+        self.assertEqual(data["success"],False)
+        self.assertEqual(data["message"],"unprocessable")
+
+    def test_405_on_delete_when_no_record_is_specified(self):
+        res = self.client().delete("/books")
+        data = json.loads(res.data)
+
+        self.assertEqual(data["success"],False)
+        self.assertEqual(data["message"],"Method Not Allowed")
+        self.assertEqual(res.status_code,405)
+
+    def test_405_on_get_a_non_existant_book(self):
+        res = self.client().get("/books/1000")
+        data = json.loads(res.data)
+
+        self.assertEqual(data["success"],False)
+        self.assertEqual(data["message"],"Method Not Allowed")
+        self.assertEqual(res.status_code,405)
+
+    # def test_on_get_paginated_books(self):
+    #     res = self.client().get("/books")
+    #     data = json.loads(res.data)
+
+    #     self.assertEqual(res.status_code,200)
+    #     self.assertEqual(data["success"],True)
+    #     self.assertEqual(data["total_books"],16)
+
+    def test_get_paginated_books(self):
+        res = self.client().get("/books")
+        data = json.loads(res.data)
+        print(data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+        self.assertTrue(data["total_books"])
+        self.assertTrue(len(data["books"]))
+        
 
 
 # Make the tests conveniently executable
