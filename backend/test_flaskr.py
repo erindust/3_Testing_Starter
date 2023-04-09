@@ -67,23 +67,76 @@ class BookTestCase(unittest.TestCase):
         self.assertEqual(data["message"],"Method Not Allowed")
         self.assertEqual(res.status_code,405)
 
-    # def test_on_get_paginated_books(self):
-    #     res = self.client().get("/books")
-    #     data = json.loads(res.data)
 
-    #     self.assertEqual(res.status_code,200)
-    #     self.assertEqual(data["success"],True)
-    #     self.assertEqual(data["total_books"],16)
+    def test_404_sent_requesting_beyond_valid_page(self):
+        res = self.client().get("/books?page=1000")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "resource not found")
+
+
+    def test_200_sent_posting_a_new_book(self):
+        newBook = {
+            "title":"Annasi Boys",
+            "author":"Neil Gaiman",
+            "rating":5
+        }
+        res = self.client().post("/books",json=newBook)
+        data=json.loads(res.data)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"],True)
+        self.assertTrue(data["books"])
+        self.assertTrue(data["total_books"])
+        self.assertTrue(data["created"])
+        
 
     def test_get_paginated_books(self):
         res = self.client().get("/books")
         data = json.loads(res.data)
-        print(data)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
         self.assertTrue(data["total_books"])
         self.assertTrue(len(data["books"]))
-        
+
+
+    def test_200_sent_requesting_from_valid_page(self):
+        res = self.client().get("/books?page=1")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
+        # self.assertEqual(data["message"], "resource not found")
+
+    # need to test on an existing record
+    def test_200_deleting_existing_record(self):
+        bookId = 9
+        res = self.client().delete("/books/"+str(bookId))
+        data = json.loads(res.data)
+
+        book = Book.query.filter(Book.id==bookId).one_or_none()
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"],True)
+        self.assertEqual(data["deleted"],bookId)
+        self.assertTrue(data["books"])
+        self.assertTrue(data["total_books"])
+        self.assertEqual(book,None)
+
+    # need to test on an existing record
+    def test_200_on_updating_rating_on_existing_book(self):
+        bookId = 11
+        rating = 1
+        res = self.client().patch("/books/"+str(bookId),json={"rating":rating})
+        data = json.loads(res.data)
+
+        book = Book.query.filter(Book.id == bookId).one_or_none()
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"],True)
+        self.assertEqual(book.format()["rating"], rating)
+
 
 
 # Make the tests conveniently executable
